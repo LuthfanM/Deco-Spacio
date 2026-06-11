@@ -8,7 +8,10 @@ import {
   MoodLighting,
   RoomType,
 } from "@/features/prompt-studio/types/prompt.types";
+import IdentitySettings from "@/features/workspace/components/IdentitySettings";
+import PersonalGallery from "@/features/workspace/components/PersonalGallery";
 import Container from "@/shared/components/container";
+import type { GenerationImage } from "../types/database";
 import { useState } from "react";
 
 export default function Home() {
@@ -18,6 +21,9 @@ export default function Home() {
   const [mood, setMood] = useState<MoodLighting>("Warm");
   const [cameraView, setCameraView] = useState<CameraView>("Wide angle");
   const [prompt, setPrompt] = useState<string>("");
+
+  const gallery: GenerationImage[] = [];
+  const session = null;
 
   return (
     <Container>
@@ -40,10 +46,24 @@ export default function Home() {
               generationSeed={null}
             />
           </aside>
-          <div className="justify-self-end">
+
+          <section className="scroll-mt-4">
             <PreviewCard image={activeImage} />
-          </div>
+          </section>
         </div>
+        <section className="grid grid-cols-1 xl:grid-cols-12 gap-4 items-start">
+          <div className="xl:col-span-8">
+            <PersonalGallery
+              images={gallery}
+              selectedImageId={"1"}
+              onSelectImage={() => {}}
+            />
+          </div>
+
+          <div className="xl:col-span-4">
+            <IdentitySettings session={session} />
+          </div>
+        </section>
       </main>
     </Container>
   );
