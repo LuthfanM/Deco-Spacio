@@ -27,6 +27,7 @@ interface PromptFormProps {
   setPrompt: (val: string) => void;
   parentImageId: string | null;
   generationSeed: number | null;
+  onSubmit: () => void;
 }
 
 export default function PromptForm({
@@ -42,11 +43,14 @@ export default function PromptForm({
   setPrompt,
   parentImageId,
   generationSeed,
+  onSubmit
 }: PromptFormProps) {
   const customInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    onSubmit();
   };
 
   const focusCustomInput = (id: string) => {
