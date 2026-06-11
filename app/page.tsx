@@ -1,48 +1,118 @@
 "use client";
 
-import { ArrowRight, Sparkles } from "lucide-react";
-import { motion } from "motion/react";
+import { useEffect, useState } from "react";
+
+type ApiResult =
+  | { type: "image"; src: string }
+  | { type: "json"; data: unknown }
+  | { type: "text"; data: string };
+
+function getImageUrlFromJson(data: unknown): string | null {
+  if (!data || typeof data !== "object") {
+    return null;
+  }
+
+  const record = data as Record<string, unknown>;
+  const possibleUrl =
+    record.image ||
+    record.imageUrl ||
+    record.url ||
+    record.result ||
+    record.output;
+
+  return typeof possibleUrl === "string" ? possibleUrl : null;
+}
 
 export default function Home() {
+  const [result, setResult] = useState<ApiResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    let objectUrl: string | null = null;
+    const controller = new AbortController();
+
+    async function generateImage() {
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        const response = await fetch("/api/generate", {
+          method: "POST",
+          signal: controller.signal,
+        });
+
+        if (!response.ok) {
+          throw new Error(`Request failed with status ${response.status}`);
+        }
+
+        const contentType = response.headers.get("content-type") || "";
+
+        if (contentType.startsWith("image/")) {
+          const blob = await response.blob();
+          objectUrl = URL.createObjectURL(blob);
+          setResult({ type: "image", src: objectUrl });
+          return;
+        }
+
+        if (contentType.includes("application/json")) {
+          const data = await response.json();
+          const imageUrl = getImageUrlFromJson(data);
+
+          setResult(imageUrl ? { type: "image", src: imageUrl } : { type: "json", data });
+          return;
+        }
+
+        setResult({ type: "text", data: await response.text() });
+      } catch (err) {
+        if ((err as Error).name !== "AbortError") {
+          setError((err as Error).message || "Failed to call generate API");
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    generateImage();
+
+    return () => {
+      controller.abort();
+
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl);
+      }
+    };
+  }, []);
+
   return (
-    <main className="min-h-screen bg-[#f7f4ef] text-[#191816]">
-      <section className="mx-auto flex min-h-screen w-full max-w-6xl flex-col justify-center px-6 py-16 sm:px-8">
-        <motion.div
-          initial={{ opacity: 0, y: 18 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.55, ease: "easeOut" }}
-          className="max-w-3xl"
-        >
-          <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-[#d8d0c2] bg-white/70 px-4 py-2 text-sm text-[#5b554c] shadow-sm">
-            <Sparkles aria-hidden="true" className="h-4 w-4 text-[#bf7c45]" />
-            Next.js 15 + Tailwind CSS 4 starter
-          </div>
+    <main className="flex min-h-screen items-center justify-center bg-neutral-950 p-6 text-white">
+      {isLoading && <p className="text-sm text-neutral-300">Generating image...</p>}
 
-          <h1 className="text-5xl font-semibold tracking-normal text-balance sm:text-7xl">
-            Deco Spacio
-          </h1>
-          <p className="mt-6 max-w-2xl text-lg leading-8 text-[#5b554c] sm:text-xl">
-            A clean boilerplate with TypeScript, App Router, Tailwind CSS,
-            lucide-react icons, and Motion ready for product UI work.
-          </p>
+      {error && (
+        <p className="max-w-xl rounded-md border border-red-400/30 bg-red-950/50 p-4 text-sm text-red-100">
+          {error}
+        </p>
+      )}
 
-          <div className="mt-10 flex flex-wrap gap-3">
-            <a
-              href="https://nextjs.org/docs"
-              className="inline-flex min-h-11 items-center gap-2 rounded-md bg-[#191816] px-5 py-3 text-sm font-medium text-white transition hover:bg-[#34312c] focus:outline-none focus:ring-2 focus:ring-[#bf7c45] focus:ring-offset-2"
-            >
-              Next docs
-              <ArrowRight aria-hidden="true" className="h-4 w-4" />
-            </a>
-            <a
-              href="https://tailwindcss.com/docs"
-              className="inline-flex min-h-11 items-center rounded-md border border-[#d8d0c2] bg-white px-5 py-3 text-sm font-medium text-[#191816] transition hover:border-[#b8ad9d] focus:outline-none focus:ring-2 focus:ring-[#bf7c45] focus:ring-offset-2"
-            >
-              Tailwind docs
-            </a>
-          </div>
-        </motion.div>
-      </section>
+      {!isLoading && !error && result?.type === "image" && (
+        <img
+          src={result.src}
+          alt="Generated result"
+          className="max-h-[90vh] max-w-full rounded-md object-contain"
+        />
+      )}
+
+      {!isLoading && !error && result?.type === "json" && (
+        <pre className="max-h-[90vh] max-w-4xl overflow-auto rounded-md bg-neutral-900 p-4 text-sm text-neutral-100">
+          {JSON.stringify(result.data, null, 2)}
+        </pre>
+      )}
+
+      {!isLoading && !error && result?.type === "text" && (
+        <pre className="max-h-[90vh] max-w-4xl overflow-auto rounded-md bg-neutral-900 p-4 text-sm text-neutral-100">
+          {result.data}
+        </pre>
+      )}
     </main>
   );
 }

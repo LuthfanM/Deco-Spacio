@@ -1,0 +1,1 @@
+export const DEFAULT_POLLINATIONS_IMAGE_BASE_URL = "https://gen.pollinations.ai/image";
