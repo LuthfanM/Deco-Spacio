@@ -1,16 +1,18 @@
-import Container from "@/shared/components/container";
+import PreviewCard from "@/features/main-canvas/components/PreviewCard";
+import Container from "@/shared/components/Container";
 
 export default function Home() {
+  const activeImage = null;
+
   return (
     <Container>
       <section className="mx-auto flex min-h-[60vh] max-w-5xl items-center px-6 py-16">
-        <div>
-          <p className="text-sm font-medium uppercase tracking-wide text-indigo-600">
-            Deco Spacio
-          </p>
-          <h1 className="mt-3 text-4xl font-semibold text-slate-950">
-            Generate your interior preview
-          </h1>
+        <div className="grid grid-cols-1 lg:grid-cols-[55fr_45fr] gap-4 items-start">
+          {/* preview card */}
+          <div>{/* left */}</div>
+          <div className="justify-self-end">
+            <PreviewCard image={activeImage} />
+          </div>
         </div>
       </section>
     </Container>
