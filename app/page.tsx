@@ -1,5 +1,6 @@
 "use client";
 
+import PreviewCard from "@/features/main-canvas/components/PreviewCard";
 import PromptForm from "@/features/prompt-studio/components/PromptForm";
 import {
   CameraView,
@@ -7,10 +8,11 @@ import {
   MoodLighting,
   RoomType,
 } from "@/features/prompt-studio/types/prompt.types";
-import Container from "@/shared/components/Container";
+import Container from "@/shared/components/container";
 import { useState } from "react";
 
 export default function Home() {
+  const activeImage = null;
   const [roomType, setRoomType] = useState<RoomType>("Bedroom");
   const [style, setStyle] = useState<InteriorStyle>("Japandi");
   const [mood, setMood] = useState<MoodLighting>("Warm");
@@ -38,6 +40,9 @@ export default function Home() {
               generationSeed={null}
             />
           </aside>
+          <div className="justify-self-end">
+            <PreviewCard image={activeImage} />
+          </div>
         </div>
       </main>
     </Container>
