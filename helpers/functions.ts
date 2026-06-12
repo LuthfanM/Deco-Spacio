@@ -1,4 +1,5 @@
-async function readApiResponse<T = unknown>(res: Response): Promise<T> {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function readApiResponse<T = any>(res: Response): Promise<T> {
   const contentType = res.headers.get("content-type") || "";
   if (contentType.includes("application/json")) {
     return res.json();
@@ -20,4 +21,12 @@ async function readApiResponse<T = unknown>(res: Response): Promise<T> {
   } as T;
 }
 
-export { readApiResponse };
+function isNonJsonResponse(value: unknown): value is { error_message: string } {
+  return Boolean(
+    value &&
+      typeof value === "object" &&
+      "__nonJsonResponse" in value,
+  );
+}
+
+export { readApiResponse, isNonJsonResponse };
