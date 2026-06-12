@@ -1,4 +1,4 @@
-import { GenerationImage } from "@/types/database";
+import { GenerationImage } from "@/types/commons";
 import { Grid3X3, Image as ImageIcon, Sparkles, Calendar } from "lucide-react";
 
 interface PersonalGalleryProps {

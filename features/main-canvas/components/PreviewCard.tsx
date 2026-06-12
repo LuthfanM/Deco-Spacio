@@ -1,13 +1,13 @@
 import { useState, useEffect } from "react";
 import { Image, Copy, Check, RotateCcw, Zap, Sparkles, Eye, Download, X } from "lucide-react";
-import { GenerationImage } from "@/types/database";
+import { GenerationImage } from "@/types/commons";
 
 interface PreviewCardProps {
   image: GenerationImage | null;
   generating: boolean;
   error?: string | null;
-  onReusePrompt?: (img: GenerationImage) => void;
-  onGenerateVariation?: (img: GenerationImage) => void;
+  onReusePrompt: (img: GenerationImage) => void;
+  onGenerateVariation: (img: GenerationImage) => void;
 }
 
 export default function PreviewCard({
