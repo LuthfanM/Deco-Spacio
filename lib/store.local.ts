@@ -104,3 +104,38 @@ export async function listCompletedImagesByUser(
 
   return data && data.length > 0 ? data : localImages;
 }
+
+export async function findUserByRecoveryKey(
+  recoveryKey: string,
+): Promise<User | null> {
+  const cleanedKey = recoveryKey.trim().toUpperCase();
+  const localUser =
+    loadDB().users.find(
+      (user) => user.recovery_key.toUpperCase() === cleanedKey,
+    ) || null;
+  const supabase = getSupabase({ recoveryKey: cleanedKey });
+
+  if (!supabase) {
+    return localUser;
+  }
+
+  const { data, error } = await supabase
+    .from("users")
+    .select("user_id,recovery_key,created_at")
+    .ilike("recovery_key", cleanedKey)
+    .maybeSingle<User>();
+
+  if (error) {
+    console.warn("Supabase recovery lookup failed, using local JSON:", error);
+    if (localUser) return localUser;
+    throw error;
+  }
+
+  if (data) {
+    upsertLocalUser(data);
+    return data;
+  }
+
+  return localUser;
+}
+

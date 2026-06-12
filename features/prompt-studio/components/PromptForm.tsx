@@ -1,11 +1,5 @@
-import React, { useRef } from "react";
-import { ArrowRight, Sparkles } from "lucide-react";
-import {
-  RoomType,
-  InteriorStyle,
-  MoodLighting,
-  CameraView,
-} from "@/features/prompt-studio/types/prompt.types";
+import React, { useEffect, useRef, useState } from "react";
+import { AlertTriangle, ArrowRight, Sparkles } from "lucide-react";
 import {
   PresetOption,
   ROOM_TYPES,
@@ -13,6 +7,13 @@ import {
   MOOD_LIGHTING,
   CAMERA_VIEWS,
 } from "@/helpers/presets";
+import {
+  CameraView,
+  InteriorStyle,
+  MoodLighting,
+  RoomType,
+} from "@/types/commons";
+import { validateImagePrompt } from "../validations/PromptValidation";
 
 interface PromptFormProps {
   roomType: RoomType;
@@ -24,11 +25,14 @@ interface PromptFormProps {
   cameraView: CameraView;
   setCameraView: (val: CameraView) => void;
   prompt: string;
-  generating: boolean;
   setPrompt: (val: string) => void;
+  onSubmit: () => void;
+  generating: boolean;
   parentImageId: string | null;
   generationSeed: number | null;
-  onSubmit: () => void;
+  tweakMode: boolean;
+  onClearParentReference: () => void;
+  onCancelTweak: () => void;
 }
 
 export default function PromptForm({
@@ -41,17 +45,35 @@ export default function PromptForm({
   cameraView,
   setCameraView,
   prompt,
-  generating,
   setPrompt,
+  onSubmit,
+  generating,
   parentImageId,
   generationSeed,
-  onSubmit,
+  tweakMode,
+  onClearParentReference,
+  onCancelTweak,
 }: PromptFormProps) {
+  
+  const [errorLocal, setErrorLocal] = useState<string | null>(null);
   const customInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+
+  useEffect(() => {
+    if (errorLocal) {
+      setErrorLocal(null);
+    }
+  }, [prompt]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const validation = validateImagePrompt(prompt);
 
+    if (validation.valid === false) {
+      setErrorLocal(validation.message);
+      return;
+    }
+
+    setErrorLocal(null);
     onSubmit();
   };
 
@@ -185,8 +207,31 @@ export default function PromptForm({
         >
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-indigo-600 animate-pulse"></span>
-            <span>Using image reference</span>
+            <span>
+              {tweakMode
+                ? "Tweaking image"
+                : "Regenerating / tweaking reference"}
+              {parentImageId && (
+                <>
+                  {" "}
+                  <strong>{parentImageId.substring(0, 10)}...</strong>
+                </>
+              )}
+              {generationSeed !== null && (
+                <>
+                  {" "}
+                  with seed <strong>{generationSeed}</strong>
+                </>
+              )}
+            </span>
           </div>
+          <button
+            type="button"
+            onClick={onClearParentReference}
+            className="text-[10px] text-indigo-500 hover:text-indigo-800 underline underline-offset-2 font-mono ml-4"
+          >
+            Clear Ref
+          </button>
         </div>
       )}
 
@@ -223,7 +268,7 @@ export default function PromptForm({
         options: CAMERA_VIEWS,
         value: cameraView,
         setValue: setCameraView,
-        gridClassName: "grid grid-cols-1 xs:grid-cols-2 gap-2",
+        gridClassName: "grid grid-cols-2 xs:grid-cols-2 gap-2",
       })}
 
       {/* 5. Textarea Input */}
@@ -244,10 +289,18 @@ export default function PromptForm({
           className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-sans"
           id="prompt-textarea"
         />
+        {errorLocal && (
+          <p className="text-xs text-red-700 flex items-center gap-1 mt-1 font-medium bg-red-50 border border-red-200 rounded-lg px-2.5 py-2">
+            <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-red-600" />{" "}
+            {errorLocal}
+          </p>
+        )}
       </div>
 
       {/* Submit Button */}
-      <div className="grid grid-cols-1 gap-2">
+      <div
+        className={`grid gap-2 ${tweakMode ? "grid-cols-[1fr_auto]" : "grid-cols-1"}`}
+      >
         <button
           type="submit"
           disabled={generating}
@@ -258,6 +311,16 @@ export default function PromptForm({
           {generating ? "Generating Room Concept..." : "Generate Concept"}
           <ArrowRight className="w-4 h-4 text-indigo-200 ml-1" />
         </button>
+        {tweakMode && (
+          <button
+            type="button"
+            onClick={onCancelTweak}
+            disabled={generating}
+            className="px-4 py-4 bg-white hover:bg-slate-50 active:bg-slate-100 text-slate-700 font-bold text-xs tracking-wide uppercase rounded-xl border border-slate-200 shadow-sm transition-all cursor-pointer disabled:opacity-50"
+          >
+            Cancel
+          </button>
+        )}
       </div>
     </form>
   );

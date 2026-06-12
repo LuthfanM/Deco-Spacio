@@ -58,7 +58,7 @@ export default function IdentitySettings({
         <h3 className="text-sm font-bold tracking-wide uppercase text-indigo-600 flex items-center gap-2">
           <Sparkles className="w-4 h-4 text-indigo-600 animate-pulse" /> Personal Workspace
         </h3>
-        <span className="text-xs text-slate-400 font-mono">ID: {session?.user_id?.substring(0, 10)}...</span>
+        <span className="text-xs text-slate-400 font-mono">ID: {session?.user_id?.substring(0, 15)}...</span>
       </div>
 
       <div className="space-y-4">
