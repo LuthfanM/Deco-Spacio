@@ -1,4 +1,4 @@
-async function readApiResponse<T = any>(res: Response): Promise<T> {
+async function readApiResponse<T = unknown>(res: Response): Promise<T> {
   const contentType = res.headers.get("content-type") || "";
   if (contentType.includes("application/json")) {
     return res.json();
