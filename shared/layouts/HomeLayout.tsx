@@ -76,7 +76,10 @@ export default function Home() {
   };
 
   const handleGenerate = async () => {
+    if (!session) return;
+
     const payload = {
+      userId: session.user_id,
       roomType,
       style,
       mood,
@@ -93,6 +96,12 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
+
+      const data = await readApiResponse(res);
+      setActiveImage(data);
+      // Prepend to gallery
+      setGallery((prev) => [data, ...prev]);
+
     } catch (err) {
       console.error("Error generating image:", err);
     }

@@ -43,6 +43,17 @@ function upsertLocalUser(user: User): void {
   });
 }
 
+function upsertLocalImage(image: GenerationImage): void {
+  mutateJson((db) => {
+    const index = db.images.findIndex((item) => item.id === image.id);
+    if (index === -1) {
+      db.images.push(image);
+      return;
+    }
+    db.images[index] = image;
+  });
+}
+
 export async function createUser(): Promise<User> {
   const newUser: User = {
     user_id: generateId("user"),
@@ -86,4 +97,57 @@ export async function findUserById(userId: string): Promise<User | null> {
   // }
 
   return localUser;
+}
+
+export async function createImageRecord(
+  image: GenerationImage,
+): Promise<GenerationImage> {
+  upsertLocalImage(image);  
+
+  return image;
+}
+
+export async function updateImageRecord(
+  imageId: string,
+  updates: ImageUpdate,
+): Promise<GenerationImage | null> {
+  const payload = {
+    ...updates,
+    updated_at: updates.updated_at || new Date().toISOString(),
+  };
+
+  const db = loadDB();
+  const recordIndex = db.images.findIndex((image) => image.id === imageId);
+  if (recordIndex === -1) {
+    return null;
+  }
+
+  const updatedImage: GenerationImage = {
+    ...db.images[recordIndex],
+    ...payload,
+  };
+  db.images[recordIndex] = updatedImage;
+  saveDB(db);
+
+  // const supabase = getSupabase({ userId: updatedImage.user_id });
+  // if (supabase) {
+  //   const { data, error } = await supabase
+  //     .from("images")
+  //     .update(payload)
+  //     .eq("id", imageId)
+  //     .select("*")
+  //     .maybeSingle<GenerationImage>();
+
+  //   if (error) {
+  //     console.warn("Supabase image update failed, using local JSON:", error);
+  //     return updatedImage;
+  //   }
+
+  //   if (data) {
+  //     upsertLocalImage(data);
+  //     return data;
+  //   }
+  // }
+
+  return updatedImage;
 }
