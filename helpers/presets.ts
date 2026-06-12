@@ -1,5 +1,4 @@
-import { RoomType, InteriorStyle, MoodLighting, CameraView } from "@/features/prompt-studio/types/prompt.types";
-
+import { RoomType, InteriorStyle, MoodLighting, CameraView } from "@/types/commons";
 export interface PresetOption<T> {
   value: T;
   label: string;
