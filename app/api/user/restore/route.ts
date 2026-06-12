@@ -34,14 +34,18 @@ export async function POST(req: NextRequest) {
       userId: user.user_id,
       recoveryKey: user.recovery_key,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("User restore API failed:", error);
+
+    const errorMessage =
+      error instanceof Error
+        ? error.message
+        : "Unable to restore your gallery from storage.";
 
     return NextResponse.json(
       {
         success: false,
-        error_message:
-          error?.message || "Unable to restore your gallery from storage.",
+        error_message: errorMessage,
       },
       { status: 500 },
     );

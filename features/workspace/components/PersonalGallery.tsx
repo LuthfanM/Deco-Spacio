@@ -1,5 +1,8 @@
 import { GenerationImage } from "@/types/commons";
+import NextImage from "next/image";
 import { Grid3X3, Image as ImageIcon, Sparkles, Calendar } from "lucide-react";
+
+const imageLoader = ({ src }: { src: string }) => src;
 
 interface PersonalGalleryProps {
   images: GenerationImage[];
@@ -71,12 +74,16 @@ export default function PersonalGallery({
                   <button
                     type="button"
                     onClick={() => onSelectImage(img)}
-                    className="aspect-square w-full bg-slate-100 overflow-hidden cursor-pointer group block text-left"
+                    className="relative aspect-square w-full bg-slate-100 overflow-hidden cursor-pointer group block text-left"
                     aria-label={`Select generated image ${img.id}`}
                   >
-                    <img
+                    <NextImage
                       src={img.image_url}
                       alt={img.prompt}
+                      fill
+                      sizes="(min-width: 1280px) 20vw, (min-width: 640px) 40vw, 90vw"
+                      loader={imageLoader}
+                      unoptimized
                       referrerPolicy="no-referrer"
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                     />

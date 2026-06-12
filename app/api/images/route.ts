@@ -15,13 +15,18 @@ export async function GET(req: NextRequest) {
     const userImages = await listCompletedImagesByUser(userId);
 
     return NextResponse.json(userImages);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Images API failed:", error);
+
+    const errorMessage =
+      error instanceof Error
+        ? error.message
+        : "Unable to load your saved gallery.";
 
     return NextResponse.json(
       {
         error: "Images API failed",
-        error_message: error?.message || "Unable to load your saved gallery.",
+        error_message: errorMessage,
       },
       { status: 500 },
     );

@@ -62,6 +62,7 @@ export default function PromptForm({
     if (errorLocal) {
       setErrorLocal(null);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [prompt]);
 
   const handleSubmit = (e: React.FormEvent) => {

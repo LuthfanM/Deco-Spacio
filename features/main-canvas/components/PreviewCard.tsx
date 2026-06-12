@@ -1,5 +1,16 @@
 import { useState, useEffect } from "react";
-import { Image, Copy, Check, RotateCcw, Zap, Sparkles, Eye, Download, X } from "lucide-react";
+import NextImage from "next/image";
+import {
+  Image as ImageIcon,
+  Copy,
+  Check,
+  RotateCcw,
+  Zap,
+  Sparkles,
+  Eye,
+  Download,
+  X,
+} from "lucide-react";
 import { GenerationImage } from "@/types/commons";
 
 interface PreviewCardProps {
@@ -9,6 +20,35 @@ interface PreviewCardProps {
   onReusePrompt: (img: GenerationImage) => void;
   onGenerateVariation: (img: GenerationImage) => void;
 }
+
+const LOADING_STEPS = [
+  {
+    title: "Initializing Engine",
+    detail: "Setting up sandboxed container for design iteration...",
+  },
+  {
+    title: "Reviewing Layout",
+    detail: "Analyzing room type, style, and composition...",
+  },
+  {
+    title: "Building Prompt Details",
+    detail: "Composing architectural materials, mood, and camera direction...",
+  },
+  {
+    title: "Simulating lighting angles",
+    detail: "Modeling light rays and shadows for specified mood...",
+  },
+  {
+    title: "Rendering Textures",
+    detail: "Constructing woods, stones, marble and textiles (Pollinations)...",
+  },
+  {
+    title: "Polishing Concepts",
+    detail: "Applying final realistic details, photography tone...",
+  },
+];
+
+const imageLoader = ({ src }: { src: string }) => src;
 
 export default function PreviewCard({
   image,
@@ -23,35 +63,6 @@ export default function PreviewCard({
   const [loadingStep, setLoadingStep] = useState(0);
   const [previewImage, setPreviewImage] = useState<GenerationImage | null>(null);
   const [imageRetryToken, setImageRetryToken] = useState(0);
-  
-  const LOADING_STEPS = [
-    {
-      title: "Initializing Engine",
-      detail: "Setting up sandboxed container for design iteration...",
-    },
-    {
-      title: "Reviewing Layout",
-      detail: "Analyzing room type, style, and composition...",
-    },
-    {
-      title: "Building Prompt Details",
-      detail:
-        "Composing architectural materials, mood, and camera direction...",
-    },
-    {
-      title: "Simulating lighting angles",
-      detail: "Modeling light rays and shadows for specified mood...",
-    },
-    {
-      title: "Rendering Textures",
-      detail:
-        "Constructing woods, stones, marble and textiles (Pollinations)...",
-    },
-    {
-      title: "Polishing Concepts",
-      detail: "Applying final realistic details, photography tone...",
-    },
-  ];
 
   useEffect(() => {
     let timerID: NodeJS.Timeout;
@@ -109,7 +120,7 @@ export default function PreviewCard({
       {/* Header */}
       <div className="border-b border-slate-100 p-4 shrink-0 flex items-center justify-between">
         <h3 className="text-sm font-bold text-slate-750 uppercase tracking-wider flex items-center gap-2">
-          <Image className="w-4 h-4 text-indigo-600" /> Design Canvas
+          <ImageIcon className="w-4 h-4 text-indigo-600" /> Design Canvas
         </h3>
         {generating && (
           <span className="text-[10px] bg-indigo-50 text-indigo-700 font-mono font-bold border border-indigo-100 px-2.5 py-0.5 rounded-full animate-pulse flex items-center gap-1">
@@ -131,7 +142,7 @@ export default function PreviewCard({
             <div className="relative mx-auto w-24 h-24 flex items-center justify-center">
               <div className="absolute inset-0 border-4 border-slate-200/50 rounded-full"></div>
               <div className="absolute inset-0 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-              <Image className="w-8 h-8 text-indigo-500 animate-pulse" />
+              <ImageIcon className="w-8 h-8 text-indigo-500 animate-pulse" />
             </div>
 
             <div className="space-y-2">
@@ -163,9 +174,13 @@ export default function PreviewCard({
           <div className="w-full space-y-6 animate-fade-in" id="success-state">
             {/* Image Box */}
             <div className="relative group border border-slate-250 rounded-2xl overflow-hidden shadow-xl bg-slate-200 aspect-[1024/800] w-[95%] mx-auto">
-              <img
+              <NextImage
                 src={getImageSrc(image.image_url)}
                 alt={image.prompt}
+                fill
+                sizes="(min-width: 1024px) 45vw, 95vw"
+                loader={imageLoader}
+                unoptimized
                 referrerPolicy="no-referrer"
                 onError={() => {
                   if (imageRetryToken < 2) {
@@ -284,7 +299,7 @@ export default function PreviewCard({
             id="blank-state"
           >
             <div className="w-16 h-16 rounded-2xl bg-white border border-slate-200 flex items-center justify-center mx-auto shadow-sm">
-              <Image className="w-6 h-6 text-slate-400" />
+              <ImageIcon className="w-6 h-6 text-slate-400" />
             </div>
             <div className="space-y-1">
               <h4 className="text-sm font-bold text-slate-700">
@@ -310,12 +325,18 @@ export default function PreviewCard({
             >
               <X className="w-4 h-4" />
             </button>
-            <img
-              src={getImageSrc(previewImage.image_url)}
-              alt={previewImage.prompt}
-              referrerPolicy="no-referrer"
-              className="max-w-[80vw] max-h-[80vh] object-contain rounded-xl shadow-2xl bg-slate-900"
-            />
+            <div className="relative h-[80vh] w-[80vw] overflow-hidden">
+              <NextImage
+                src={getImageSrc(previewImage.image_url)}
+                alt={previewImage.prompt}
+                fill
+                sizes="80vw"
+                loader={imageLoader}
+                unoptimized
+                referrerPolicy="no-referrer"
+                className="object-contain"
+              />
+            </div>
           </div>
         </div>
       )}

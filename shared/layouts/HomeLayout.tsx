@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import PreviewCard from "@/features/main-canvas/components/PreviewCard";
 import PromptForm from "@/features/prompt-studio/components/PromptForm";
 import IdentitySettings from "@/features/workspace/components/IdentitySettings";
@@ -53,6 +53,29 @@ export default function Home() {
     setGenerationError(message || fallback);
   };
 
+  const fetchGallery = useCallback(async (userId: string) => {
+    try {
+      const res = await fetch(`/api/images?userId=${userId}`);
+
+      if (res.ok) {
+        const images = await readApiResponse<GenerationImage[]>(res);
+        if (isNonJsonResponse(images)) {
+          setGenerationError(images.error_message);
+          return;
+        }
+        setGallery(images);
+
+        //show first index for first
+        if (images.length > 0) {
+          setActiveImage((currentImage) => currentImage || images[0]);
+        }
+      }
+    } catch (err) {
+      console.error("Gallery acquisition error:", err);
+      showError(err, "Unable to load your saved gallery.");
+    }
+  }, []);
+
   useEffect(() => {
     async function initSession() {
       try {
@@ -84,30 +107,7 @@ export default function Home() {
       }
     }
     initSession();
-  }, []);
-
-  const fetchGallery = async (userId: string) => {
-    try {
-      const res = await fetch(`/api/images?userId=${userId}`);
-
-      if (res.ok) {
-        const images = await readApiResponse<GenerationImage[]>(res);
-        if (isNonJsonResponse(images)) {
-          setGenerationError(images.error_message);
-          return;
-        }
-        setGallery(images);
-
-        //show first index for first
-        if (images.length > 0 && !activeImage) {
-          setActiveImage(images[0]);
-        }
-      }
-    } catch (err) {
-      console.error("Gallery acquisition error:", err);
-      showError(err, "Unable to load your saved gallery.");
-    }
-  };
+  }, [fetchGallery]);
 
   const handleResetSession = async () => {
     if (
