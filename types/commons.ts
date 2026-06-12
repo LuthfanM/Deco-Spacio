@@ -62,3 +62,15 @@ export interface UserSession {
   recovery_key: string;
   created_at: string;
 }
+
+export type TweakSnapshot = {
+  prompt: string;
+  roomType: RoomType;
+  style: InteriorStyle;
+  mood: MoodLighting;
+  cameraView: CameraView;
+  parentImageId: string | null;
+  generationSeed: number | null;
+  activeImage: GenerationImage | null;
+  statusMessage: string | null;
+};
