@@ -32,7 +32,7 @@ export default function Home() {
   useEffect(() => {
     async function initSession() {
       try {
-        const storedId = localStorage.getItem("room_muse_user_id");
+        const storedId = localStorage.getItem("deco_spacio_user_id");
         const res = await fetch("/api/user", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -44,7 +44,7 @@ export default function Home() {
         if (res.ok) {
           const data = await readApiResponse<UserSession>(res);
           setSession(data);
-          localStorage.setItem("room_muse_user_id", data.user_id);
+          localStorage.setItem("deco_spacio_user_id", data.user_id);
           // Load existing gallery
           fetchGallery(data.user_id);
         }

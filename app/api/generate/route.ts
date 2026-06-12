@@ -1,5 +1,9 @@
 import { generateId, GenerationImage, getImagesDirPath } from "@/lib/db";
-import { createImageRecord, updateImageRecord } from "@/lib/store";
+import {
+  createImageRecord,
+  updateImageRecord,
+  uploadImageToStorage,
+} from "@/lib/store";
 import fs from "fs";
 import {
   buildInteriorPrompt,
@@ -70,14 +74,12 @@ async function generateImageResponse(req: Request) {
 
     console.log(`Final Pollinations Prompt: ${finalPrompt}`);
 
-    // Update DB with enriched prompt
     await updateImageRecord(imageId, { final_prompt: finalPrompt });
 
     if (!process.env.POLLINATIONS_KEY) {
       throw new Error("POLLINATIONS_KEY is missing in .env.local");
     }
 
-    // 2. Call Pollinations image API
     const pollinationsUrl = buildPollinationsImageUrl(finalPrompt, seed);
 
     const imgRes = await fetch(pollinationsUrl, {
@@ -102,17 +104,22 @@ async function generateImageResponse(req: Request) {
     const arrayBuffer = await imgRes.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    // 3. Save the image to local storage folder and Supabase Storage if configured.
     const IMAGES_DIR = getImagesDirPath();
     const filename = `img_${imageId}.${extensionFromImageContentType(imageContentType)}`;
     const storagePath = path.join(IMAGES_DIR, filename);
     fs.writeFileSync(storagePath, buffer);
 
-    // 4. Update state to COMPLETED
+    const supabaseUpload = await uploadImageToStorage({
+      userId: userId as string,
+      filename,
+      buffer,
+      contentType: imageContentType,
+    });
+
     const completedImage = await updateImageRecord(imageId, {
       status: "COMPLETED",
-      image_url: `/api/images/file/${filename}`,
-      storage_path: storagePath,
+      image_url: supabaseUpload?.imageUrl || `/api/images/file/${filename}`,
+      storage_path: supabaseUpload?.storagePath || storagePath,
     });
 
     if (completedImage) {
