@@ -9,7 +9,7 @@ import {
   isNonJsonResponse,
   readApiResponse,
 } from "@/helpers/functions";
-import Container from "@/shared/components/container";
+import Container from "@/shared/components/Container";
 import {
   CameraView,
   GenerationImage,
