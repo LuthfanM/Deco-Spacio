@@ -97,7 +97,7 @@ export default function Home() {
         body: JSON.stringify(payload),
       });
 
-      const data = await readApiResponse(res);
+      const data = await readApiResponse<GenerationImage>(res);
       setActiveImage(data);
       // Prepend to gallery
       setGallery((prev) => [data, ...prev]);

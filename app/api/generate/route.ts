@@ -29,7 +29,7 @@ async function generateImageResponse(req: Request) {
   }
 
   // const promptLower = prompt.toLowerCase(); //will be use to validate later
-  const requestedSeed = Number(req.body?.seed);
+  const requestedSeed = Number(body?.seed);
 
   const imageId = generateId("img");
   const seed =
@@ -123,13 +123,15 @@ async function generateImageResponse(req: Request) {
         "Unable to locate generation tracking record in database.",
       );
     }
-  } catch (err: any) {
+  } catch (err) {
     console.error("AI Generation Process failed:", err);
 
     await updateImageRecord(imageId, {
       status: "FAILED",
       error_message:
-        err.message || "An unexpected error occurred during image generation.",
+        err instanceof Error
+          ? err.message
+          : "An unexpected error occurred during image generation.",
     });
 
     return Response.json(
