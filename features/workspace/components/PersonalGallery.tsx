@@ -1,5 +1,5 @@
-import { Calendar, Grid3X3, Image as ImageIcon } from "lucide-react";
-import type { GenerationImage } from "../../../types/database";
+import { GenerationImage } from "@/types/database";
+import { Grid3X3, Image as ImageIcon, Sparkles, Calendar } from "lucide-react";
 
 interface PersonalGalleryProps {
   images: GenerationImage[];
@@ -39,7 +39,7 @@ export default function PersonalGallery({
         </span>
       </div>
 
-      <div className="flex-1 overflow-y-auto max-h-160 pr-1 scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-slate-50">
+      <div className="flex-1 overflow-y-auto max-h-[640px] pr-1 scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-slate-50">
         {images.length === 0 ? (
           /* Blank state gallery */
           <div className="text-center py-16 px-4 space-y-3" id="gallery-empty-state">
@@ -48,7 +48,7 @@ export default function PersonalGallery({
             </div>
             <div className="space-y-1">
               <p className="text-xs font-bold text-slate-700">Your personal board is empty</p>
-              <p className="text-[11px] text-slate-450 leading-relaxed max-w-50 mx-auto">
+              <p className="text-[11px] text-slate-450 leading-relaxed max-w-[200px] mx-auto">
                 Successfully generated room layout concepts will appear here as saveable design cards.
               </p>
             </div>
@@ -92,7 +92,17 @@ export default function PersonalGallery({
                           <Calendar className="w-3 h-3 text-slate-400" />
                           {formatDate(img.created_at)}
                         </span>
+                        {img.parent_image_id && (
+                          <span className="bg-indigo-50 text-indigo-700 border border-indigo-100 rounded-full px-2 py-0.5 flex items-center gap-1 font-bold">
+                            <Sparkles className="w-2.5 h-2.5 text-indigo-600" /> Var
+                          </span>
+                        )}
                       </div>
+                      {typeof img.seed === "number" && (
+                        <p className="text-[10px] font-mono text-slate-400">
+                          Seed: <span className="font-bold text-slate-600">{img.seed}</span>
+                        </p>
+                      )}
                     </div>
                   </div>
                 </article>

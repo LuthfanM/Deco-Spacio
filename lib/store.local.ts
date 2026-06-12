@@ -35,7 +35,9 @@ export function upsertLocalImage(image: GenerationImage): void {
   });
 }
 
-export async function mirrorImageToSupabase(image: GenerationImage): Promise<void> {
+export async function mirrorImageToSupabase(
+  image: GenerationImage,
+): Promise<void> {
   const supabase = getSupabase({ userId: image.user_id });
   if (!supabase) return;
 
@@ -48,7 +50,6 @@ export async function mirrorImageToSupabase(image: GenerationImage): Promise<voi
   }
 }
 
-
 export async function mirrorUserToSupabase(user: User): Promise<void> {
   const supabase = getSupabase({ userId: user.user_id });
   if (!supabase) return;
@@ -60,4 +61,46 @@ export async function mirrorUserToSupabase(user: User): Promise<void> {
   if (error) {
     console.warn("Supabase user mirror failed:", error);
   }
+}
+
+export async function listCompletedImagesByUser(
+  userId: string,
+): Promise<GenerationImage[]> {
+  const localImages = loadDB()
+    .images.filter(
+      (img) => img.user_id === userId && img.status === "COMPLETED",
+    )
+    .sort(
+      (a, b) =>
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+    );
+  const supabase = getSupabase({ userId });
+
+  if (!supabase) {
+    return localImages;
+  }
+
+  const { data, error } = await supabase
+    .from("images")
+    .select("*")
+    .eq("user_id", userId)
+    .eq("status", "COMPLETED")
+    .order("created_at", { ascending: false })
+    .returns<GenerationImage[]>();
+
+  if (error) {
+    console.warn("Supabase gallery lookup failed, using local JSON:", error);
+    if (localImages.length > 0) return localImages;
+    throw error;
+  }
+
+  for (const image of data || []) {
+    upsertLocalImage(image);
+  }
+
+  if ((data || []).length === 0 && localImages.length > 0) {
+    await Promise.all(localImages.map((image) => mirrorImageToSupabase(image)));
+  }
+
+  return data && data.length > 0 ? data : localImages;
 }

@@ -24,6 +24,7 @@ interface PromptFormProps {
   cameraView: CameraView;
   setCameraView: (val: CameraView) => void;
   prompt: string;
+  generating: boolean;
   setPrompt: (val: string) => void;
   parentImageId: string | null;
   generationSeed: number | null;
@@ -40,10 +41,11 @@ export default function PromptForm({
   cameraView,
   setCameraView,
   prompt,
+  generating,
   setPrompt,
   parentImageId,
   generationSeed,
-  onSubmit
+  onSubmit,
 }: PromptFormProps) {
   const customInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
@@ -125,6 +127,7 @@ export default function PromptForm({
                     }}
                     placeholder={opt.label}
                     className="block w-full bg-transparent font-semibold text-xs text-inherit placeholder:text-slate-500 focus:outline-none"
+                    disabled={generating}
                   />
                   <div className="text-[10px] text-slate-400 font-normal truncate mt-0.5">
                     {opt.description}
@@ -143,6 +146,7 @@ export default function PromptForm({
                     ? "bg-indigo-50/70 border-indigo-500 text-indigo-700 shadow-sm"
                     : "bg-slate-50 border-slate-200 hover:bg-slate-100 text-slate-600 hover:text-slate-800"
                 }`}
+                disabled={generating}
                 title={opt.description}
               >
                 <div className="font-semibold">{opt.label}</div>
@@ -246,11 +250,12 @@ export default function PromptForm({
       <div className="grid grid-cols-1 gap-2">
         <button
           type="submit"
+          disabled={generating}
           className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-bold text-sm tracking-wide uppercase rounded-xl shadow-lg shadow-indigo-200 hover:shadow-indigo-300 active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
           id="generate-button"
         >
           <Sparkles className="w-4 h-4 text-indigo-200" />
-          Generate Concept
+          {generating ? "Generating Room Concept..." : "Generate Concept"}
           <ArrowRight className="w-4 h-4 text-indigo-200 ml-1" />
         </button>
       </div>
