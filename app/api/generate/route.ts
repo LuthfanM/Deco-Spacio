@@ -12,15 +12,29 @@ import {
   extensionFromImageContentType,
 } from "@/server/controllers/generateController";
 import path from "path";
+import { simulateApiDelay } from "@/server/server-functions";
 
 async function generateImageResponse(req: Request) {
+  if (process.env.API_OFF === "true") {
+    return Response.json(
+      {
+        status: "Failed",
+        error_message: "Service currently not available",
+      },
+      {
+        status: 503,
+      },
+    );
+  }
+
   const body = await req.json();
 
   const { userId, roomType, style, mood, cameraView, parentImageId } = body;
 
   const prompt = cleanPromptPart(body?.prompt);
 
-  const generationType = "generate";
+  const generationType: "generate" | "edit" =
+    body?.generationType === "edit" ? "edit" : "generate";
 
   if (!userId) {
     return Response.json(
@@ -32,8 +46,18 @@ async function generateImageResponse(req: Request) {
     );
   }
 
-  // const promptLower = prompt.toLowerCase(); //will be use to validate later
   const requestedSeed = Number(body?.seed);
+  const simulatedDelayMs = await simulateApiDelay();
+
+  if (simulatedDelayMs > 0) {
+    return Response.json(
+      {
+        status: "FAILED",
+        error_message: `The AI service took too long to respond. Please try again. (Simulated API delay: ${simulatedDelayMs}ms)`,
+      },
+      { status: 504 },
+    );
+  }
 
   const imageId = generateId("img");
   const seed =
