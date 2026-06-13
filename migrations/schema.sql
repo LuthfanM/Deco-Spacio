@@ -1,5 +1,5 @@
 -- Deco-spacio AI Supabase schema
--- Run this file in Supabase SQL Editor when migrating from data/db.json.
+-- Run this file in Supabase SQL Editor before using the app.
 
 create extension if not exists pgcrypto;
 

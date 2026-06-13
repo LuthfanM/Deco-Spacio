@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { listCompletedImagesByUser } from "@/lib/store.local";
+import { listCompletedImagesByUser } from "@/lib/store";
 
 export async function GET(req: NextRequest) {
   try {

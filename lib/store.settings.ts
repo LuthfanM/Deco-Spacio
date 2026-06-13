@@ -13,6 +13,31 @@ type SupabaseContext = {
   recoveryKey?: string;
 };
 
+export const DATABASE_ERROR_MESSAGE =
+  "Database error. Please check Supabase URL, key, schema, storage bucket, and RLS policies.";
+
+export function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  if (
+    error &&
+    typeof error === "object" &&
+    "message" in error &&
+    typeof error.message === "string"
+  ) {
+    return error.message;
+  }
+
+  return "Unknown database error.";
+}
+
+export function createDatabaseError(action: string, error?: unknown): Error {
+  const detail = error ? ` ${getErrorMessage(error)}` : "";
+  return new Error(`${DATABASE_ERROR_MESSAGE} Failed to ${action}.${detail}`);
+}
+
 function getSupabaseKey(): string {
   for (const key of SUPABASE_KEY_ENV_KEYS) {
     const value = process.env[key];
@@ -29,11 +54,11 @@ export function isSupabaseConfigured(): boolean {
   return Boolean(process.env[SUPABASE_URL_ENV] && getSupabaseKey());
 }
 
-export function getSupabase(context: SupabaseContext = {}): SupabaseClient | null {
+export function getSupabase(context: SupabaseContext = {}): SupabaseClient {
   const supabaseUrl = process.env[SUPABASE_URL_ENV];
 
   if (!supabaseUrl || !isSupabaseConfigured()) {
-    return null;
+    throw createDatabaseError("connect to Supabase");
   }
 
   const headers: Record<string, string> = {};

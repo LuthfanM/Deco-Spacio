@@ -34,13 +34,11 @@ Open:
 http://localhost:3000
 ```
 
-That is enough for local usage. Generated images are saved locally under `data/images`, and local records are stored in `data/db.json`.
+That is enough for local usage. User sessions, gallery records, and generated images are stored in Supabase.
 
-## Optional Supabase
+## Supabase
 
-Supabase is optional. Without it, the app falls back to local JSON/file storage.
-
-If using Supabase:
+Supabase is required for database records and image storage:
 
 1. Create a Supabase project.
 2. Run [migrations/schema.sql](migrations/schema.sql) in the Supabase SQL editor.
@@ -82,7 +80,6 @@ npm run typecheck  # TypeScript check
 - `POST /api/user/restore` restores a user by recovery key.
 - `GET /api/images?userId=...` returns completed generated images.
 - `POST /api/generate` generates an image and returns a `GenerationImage` record.
-- `GET /api/images/file/[filename]` serves locally stored generated images.
 
 ## Verification
 
@@ -97,5 +94,4 @@ npm run build
 ## Notes
 
 - Pollinations image API docs: https://gen.pollinations.ai/docs#tag/%EF%B8%8F-image
-- Local generated data is ignored by git via `data/`.
 - `.env.local` is ignored by git; keep API keys out of commits.
