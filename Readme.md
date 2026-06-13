@@ -22,20 +22,6 @@ Edit `.env.local` and set:
 POLLINATIONS_KEY="your_key_here"
 ```
 
-Run the app:
-
-```bash
-npm run dev
-```
-
-Open:
-
-```text
-http://localhost:3000
-```
-
-That is enough for local usage. User sessions, gallery records, and generated images are stored in Supabase.
-
 ## Supabase
 
 Supabase is required for database records and image storage:
@@ -47,21 +33,30 @@ Supabase is required for database records and image storage:
 ```env
 NEXT_PUBLIC_SUPABASE_URL="your_supabase_url"
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY="your_publishable_or_anon_key"
-SUPABASE_SERVICE_ROLE_KEY="your_service_role_key"
 ```
 
-The app sends user-specific RLS headers dynamically:
+Add this into your env as well, the app sends user-specific RLS headers dynamically :
 
 ```text
-x-deco-spacio-user-id
-x-deco-spacio-recovery-key
+SUPABASE_DECO_SPACIO_USER_ID=x-deco-spacio-user-id
+SUPABASE_DECO_SPACIO_RECOVERY_KEY=x-deco-spacio-recovery-key
 ```
 
-The fallback env values below are optional and normally left empty:
+make sure values in key same as inside schema.sql
 
-```env
-SUPABASE_DECO_SPACIO_USER_ID=
-SUPABASE_DECO_SPACIO_RECOVERY_KEY=
+## Run app
+
+Run the app:
+
+```bash
+npm install
+npm run dev
+```
+
+Open:
+
+```text
+http://localhost:3000
 ```
 
 ## Scripts
