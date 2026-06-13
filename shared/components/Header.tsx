@@ -1,6 +1,8 @@
 import { Sparkles, Cpu } from "lucide-react";
 
 export default function Header() {
+  const apiOffline = process.env.NEXT_PUBLIC_API_OFF === "true";
+
   return (
     <header className="border-b border-slate-200 bg-white py-5 px-[5%] shrink-0 shadow-sm">
       <div className="w-full flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
@@ -27,11 +29,11 @@ export default function Header() {
           <span className="h-4 w-px bg-slate-250"></span>
           <span className="flex items-center gap-1.5 font-semibold">
             <span
-              className={`w-2 h-2 rounded-full animate-pulse 
-                bg-green-500
-              `}
+              className={`w-2 h-2 rounded-full animate-pulse ${
+                apiOffline ? "bg-red-500" : "bg-green-500"
+              }`}
             ></span>
-            Online
+            {apiOffline ? "OFFLINE" : "ONLINE"}
           </span>
         </div>
       </div>

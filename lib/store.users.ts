@@ -1,7 +1,6 @@
 import type { User } from "@/lib/db";
-import { generateId, generateRecoveryKey, loadDB } from "@/lib/db";
-import { mirrorUserToSupabase, upsertLocalUser } from "@/lib/store.local";
-import { getSupabase } from "./store.settings";
+import { generateId, generateRecoveryKey } from "@/lib/db";
+import { createDatabaseError, getSupabase } from "@/lib/store.settings";
 
 export async function createUser(): Promise<User> {
   const newUser: User = {
@@ -10,20 +9,22 @@ export async function createUser(): Promise<User> {
     created_at: new Date().toISOString(),
   };
 
-  upsertLocalUser(newUser);
-  await mirrorUserToSupabase(newUser);
-  
-  return newUser;
+  const supabase = getSupabase({ userId: newUser.user_id });
+  const { data, error } = await supabase
+    .from("users")
+    .insert(newUser)
+    .select("user_id,recovery_key,created_at")
+    .single<User>();
+
+  if (error) {
+    throw createDatabaseError("create user session", error);
+  }
+
+  return data;
 }
 
 export async function findUserById(userId: string): Promise<User | null> {
-  const localUser =
-    loadDB().users.find((user) => user.user_id === userId) || null;
   const supabase = getSupabase({ userId });
-
-  if (!supabase) {
-    return localUser;
-  }
 
   const { data, error } = await supabase
     .from("users")
@@ -32,19 +33,27 @@ export async function findUserById(userId: string): Promise<User | null> {
     .maybeSingle<User>();
 
   if (error) {
-    console.warn("Supabase user lookup failed, using local JSON:", error);
-    if (localUser) return localUser;
-    throw error;
+    throw createDatabaseError("find user session", error);
   }
 
-  if (data) {
-    upsertLocalUser(data);
-    return data;
+  return data;
+}
+
+export async function findUserByRecoveryKey(
+  recoveryKey: string,
+): Promise<User | null> {
+  const cleanedKey = recoveryKey.trim().toUpperCase();
+  const supabase = getSupabase({ recoveryKey: cleanedKey });
+
+  const { data, error } = await supabase
+    .from("users")
+    .select("user_id,recovery_key,created_at")
+    .ilike("recovery_key", cleanedKey)
+    .maybeSingle<User>();
+
+  if (error) {
+    throw createDatabaseError("restore user session", error);
   }
 
-  if (localUser) {
-    await mirrorUserToSupabase(localUser);
-  }
-
-  return localUser;
+  return data;
 }

@@ -22,6 +22,11 @@ import {
 import { RefreshCw } from "lucide-react";
 import ErrorModal from "../modals/ErrorModal";
 
+type ApiErrorResponse = {
+  error?: string;
+  error_message?: string;
+};
+
 export default function Home() {
   const [session, setSession] = useState<UserSession | null>(null);
   const [sessionLoading, setSessionLoading] = useState(true);
@@ -51,6 +56,19 @@ export default function Home() {
   const showError = (error: unknown, fallback: string) => {
     const message = error instanceof Error ? error.message : fallback;
     setGenerationError(message || fallback);
+  };
+
+  const readErrorMessage = async (
+    res: Response,
+    fallback: string,
+  ): Promise<string> => {
+    const data = await readApiResponse<ApiErrorResponse>(res);
+
+    if (isNonJsonResponse(data)) {
+      return data.error_message;
+    }
+
+    return data.error_message || data.error || fallback;
   };
 
   const fetchGallery = useCallback(async (userId: string) => {
@@ -88,17 +106,22 @@ export default function Home() {
 
         console.log("response from /api/user:", res);
 
-        if (res.ok) {
-          const data = await readApiResponse<UserSession>(res);
-          if (isNonJsonResponse(data)) {
-            setGenerationError(data.error_message);
-            return;
-          }
-          setSession(data);
-          localStorage.setItem("deco_spacio_user_id", data.user_id);
-          // Load existing gallery
-          fetchGallery(data.user_id);
+        const fallback = "Unable to initialize your personal workspace.";
+
+        if (!res.ok) {
+          setGenerationError(await readErrorMessage(res, fallback));
+          return;
         }
+
+        const data = await readApiResponse<UserSession>(res);
+        if (isNonJsonResponse(data)) {
+          setGenerationError(data.error_message);
+          return;
+        }
+        setSession(data);
+        localStorage.setItem("deco_spacio_user_id", data.user_id);
+        // Load existing gallery
+        fetchGallery(data.user_id);
       } catch (err) {
         console.error("Workspace configuration error:", err);
         showError(err, "Unable to initialize your personal workspace.");
@@ -138,15 +161,20 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({}),
       });
-      if (res.ok) {
-        const data = await readApiResponse<UserSession>(res);
-        if (isNonJsonResponse(data)) {
-          setGenerationError(data.error_message);
-          return;
-        }
-        setSession(data);
-        localStorage.setItem("deco_spacio_user_id", data.user_id);
+      const fallback = "Unable to start a new workspace session.";
+
+      if (!res.ok) {
+        setGenerationError(await readErrorMessage(res, fallback));
+        return;
       }
+
+      const data = await readApiResponse<UserSession>(res);
+      if (isNonJsonResponse(data)) {
+        setGenerationError(data.error_message);
+        return;
+      }
+      setSession(data);
+      localStorage.setItem("deco_spacio_user_id", data.user_id);
     } catch (err) {
       console.error("New workspace allocation error:", err);
       showError(err, "Unable to start a new workspace session.");
@@ -165,23 +193,28 @@ export default function Home() {
         body: JSON.stringify({ recoveryKey }),
       });
 
-      if (res.ok) {
-        const data = await readApiResponse(res);
-        if (isNonJsonResponse(data)) {
-          setGenerationError(data.error_message);
-          return false;
-        }
-        const updatedSession: UserSession = {
-          user_id: data.userId,
-          recovery_key: data.recoveryKey,
-          created_at: new Date().toISOString(),
-        };
-        setSession(updatedSession);
-        localStorage.setItem("deco_spacio_user_id", data.userId);
+      const fallback = "Unable to restore your gallery.";
 
-        fetchGallery(data.userId);
-        return true;
+      if (!res.ok) {
+        setGenerationError(await readErrorMessage(res, fallback));
+        return false;
       }
+
+      const data = await readApiResponse(res);
+      if (isNonJsonResponse(data)) {
+        setGenerationError(data.error_message);
+        return false;
+      }
+      const updatedSession: UserSession = {
+        user_id: data.userId,
+        recovery_key: data.recoveryKey,
+        created_at: new Date().toISOString(),
+      };
+      setSession(updatedSession);
+      localStorage.setItem("deco_spacio_user_id", data.userId);
+
+      fetchGallery(data.userId);
+      return true;
     } catch (err) {
       console.error("Restoration submission error:", err);
       showError(err, "Unable to restore your gallery.");

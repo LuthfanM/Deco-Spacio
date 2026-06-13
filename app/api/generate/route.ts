@@ -1,26 +1,38 @@
-import { generateId, GenerationImage, getImagesDirPath } from "@/lib/db";
+import { generateId, GenerationImage } from "@/lib/db";
 import {
   createImageRecord,
   updateImageRecord,
   uploadImageToStorage,
 } from "@/lib/store";
-import fs from "fs";
 import {
   buildInteriorPrompt,
   buildPollinationsImageUrl,
   cleanPromptPart,
   extensionFromImageContentType,
 } from "@/server/controllers/generateController";
-import path from "path";
+import { simulateApiDelay } from "@/server/server-functions";
 
 async function generateImageResponse(req: Request) {
+  if (process.env.API_OFF === "true") {
+    return Response.json(
+      {
+        status: "Failed",
+        error_message: "Service currently not available",
+      },
+      {
+        status: 503,
+      },
+    );
+  }
+
   const body = await req.json();
 
   const { userId, roomType, style, mood, cameraView, parentImageId } = body;
 
   const prompt = cleanPromptPart(body?.prompt);
 
-  const generationType = "generate";
+  const generationType: "generate" | "edit" =
+    body?.generationType === "edit" ? "edit" : "generate";
 
   if (!userId) {
     return Response.json(
@@ -32,8 +44,18 @@ async function generateImageResponse(req: Request) {
     );
   }
 
-  // const promptLower = prompt.toLowerCase(); //will be use to validate later
   const requestedSeed = Number(body?.seed);
+  const simulatedDelayMs = await simulateApiDelay();
+
+  if (simulatedDelayMs > 0) {
+    return Response.json(
+      {
+        status: "FAILED",
+        error_message: `The AI service took too long to respond. Please try again. (Simulated API delay: ${simulatedDelayMs}ms)`,
+      },
+      { status: 504 },
+    );
+  }
 
   const imageId = generateId("img");
   const seed =
@@ -60,9 +82,9 @@ async function generateImageResponse(req: Request) {
     updated_at: new Date().toISOString(),
   };
 
-  await createImageRecord(newRecord);
-
   try {
+    await createImageRecord(newRecord);
+
     const finalPrompt = buildInteriorPrompt(
       prompt,
       roomType,
@@ -74,7 +96,7 @@ async function generateImageResponse(req: Request) {
 
     console.log(`Final Pollinations Prompt: ${finalPrompt}`);
 
-    await updateImageRecord(imageId, { final_prompt: finalPrompt });
+    await updateImageRecord(userId, imageId, { final_prompt: finalPrompt });
 
     if (!process.env.POLLINATIONS_KEY) {
       throw new Error("POLLINATIONS_KEY is missing in .env.local");
@@ -104,10 +126,7 @@ async function generateImageResponse(req: Request) {
     const arrayBuffer = await imgRes.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    const IMAGES_DIR = getImagesDirPath();
     const filename = `img_${imageId}.${extensionFromImageContentType(imageContentType)}`;
-    const storagePath = path.join(IMAGES_DIR, filename);
-    fs.writeFileSync(storagePath, buffer);
 
     const supabaseUpload = await uploadImageToStorage({
       userId: userId as string,
@@ -116,10 +135,10 @@ async function generateImageResponse(req: Request) {
       contentType: imageContentType,
     });
 
-    const completedImage = await updateImageRecord(imageId, {
+    const completedImage = await updateImageRecord(userId, imageId, {
       status: "COMPLETED",
-      image_url: supabaseUpload?.imageUrl || `/api/images/file/${filename}`,
-      storage_path: supabaseUpload?.storagePath || storagePath,
+      image_url: supabaseUpload.imageUrl,
+      storage_path: supabaseUpload.storagePath,
     });
 
     if (completedImage) {
@@ -133,13 +152,17 @@ async function generateImageResponse(req: Request) {
   } catch (err) {
     console.error("AI Generation Process failed:", err);
 
-    await updateImageRecord(imageId, {
-      status: "FAILED",
-      error_message:
-        err instanceof Error
-          ? err.message
-          : "An unexpected error occurred during image generation.",
-    });
+    try {
+      await updateImageRecord(userId, imageId, {
+        status: "FAILED",
+        error_message:
+          err instanceof Error
+            ? err.message
+            : "An unexpected error occurred during image generation.",
+      });
+    } catch (dbErr) {
+      console.error("Unable to persist failed generation status:", dbErr);
+    }
 
     return Response.json(
       {

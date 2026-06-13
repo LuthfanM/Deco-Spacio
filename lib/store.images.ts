@@ -1,8 +1,6 @@
 import type { GenerationImage } from "@/lib/db";
-import { loadDB, saveDB } from "@/lib/db";
 import { DEFAULT_STORAGE_BUCKET } from "@/lib/store.constants";
-import { mirrorImageToSupabase, upsertLocalImage } from "@/lib/store.local";
-import { getSupabase } from "@/lib/store.settings";
+import { createDatabaseError, getSupabase } from "@/lib/store.settings";
 
 export type ImageUpdate = Partial<
   Pick<
@@ -31,13 +29,22 @@ type StorageUploadResult = {
 export async function createImageRecord(
   image: GenerationImage,
 ): Promise<GenerationImage> {
-  upsertLocalImage(image);
-  await mirrorImageToSupabase(image);
-  
-  return image;
+  const supabase = getSupabase({ userId: image.user_id });
+  const { data, error } = await supabase
+    .from("images")
+    .insert(image)
+    .select("*")
+    .single<GenerationImage>();
+
+  if (error) {
+    throw createDatabaseError("create image record", error);
+  }
+
+  return data;
 }
 
 export async function updateImageRecord(
+  userId: string,
   imageId: string,
   updates: ImageUpdate,
 ): Promise<GenerationImage | null> {
@@ -46,45 +53,21 @@ export async function updateImageRecord(
     updated_at: updates.updated_at || new Date().toISOString(),
   };
 
-  const db = loadDB();
-  const recordIndex = db.images.findIndex((image) => image.id === imageId);
-
-  if (recordIndex === -1) {
-    return null;
-  }
-
-  const updatedImage: GenerationImage = {
-    ...db.images[recordIndex],
-    ...payload,
-  };
-
-  db.images[recordIndex] = updatedImage;
-  saveDB(db);
-
-  const supabase = getSupabase({ userId: updatedImage.user_id });
-
-  if (!supabase) {
-    return updatedImage;
-  }
+  const supabase = getSupabase({ userId });
 
   const { data, error } = await supabase
     .from("images")
     .update(payload)
     .eq("id", imageId)
+    .eq("user_id", userId)
     .select("*")
     .maybeSingle<GenerationImage>();
 
   if (error) {
-    console.warn("Supabase image update failed, using local JSON:", error);
-    return updatedImage;
+    throw createDatabaseError("update image record", error);
   }
 
-  if (data) {
-    upsertLocalImage(data);
-    return data;
-  }
-
-  return updatedImage;
+  return data;
 }
 
 export async function uploadImageToStorage({
@@ -92,12 +75,8 @@ export async function uploadImageToStorage({
   filename,
   buffer,
   contentType,
-}: ImageStorageUpload): Promise<StorageUploadResult | null> {
+}: ImageStorageUpload): Promise<StorageUploadResult> {
   const supabase = getSupabase({ userId });
-
-  if (!supabase) {
-    return null;
-  }
 
   const storagePath = `${userId}/${filename}`;
   const { error } = await supabase.storage
@@ -108,8 +87,7 @@ export async function uploadImageToStorage({
     });
 
   if (error) {
-    console.warn("Supabase image upload failed, using local file:", error);
-    return null;
+    throw createDatabaseError("upload image to storage", error);
   }
 
   const { data } = supabase.storage
@@ -120,4 +98,24 @@ export async function uploadImageToStorage({
     imageUrl: data.publicUrl,
     storagePath,
   };
+}
+
+export async function listCompletedImagesByUser(
+  userId: string,
+): Promise<GenerationImage[]> {
+  const supabase = getSupabase({ userId });
+
+  const { data, error } = await supabase
+    .from("images")
+    .select("*")
+    .eq("user_id", userId)
+    .eq("status", "COMPLETED")
+    .order("created_at", { ascending: false })
+    .returns<GenerationImage[]>();
+
+  if (error) {
+    throw createDatabaseError("load gallery", error);
+  }
+
+  return data || [];
 }

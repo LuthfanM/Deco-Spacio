@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { findUserByRecoveryKey } from "@/lib/store.local";
+import { findUserByRecoveryKey } from "@/lib/store";
 
 export async function POST(req: NextRequest) {
   try {
