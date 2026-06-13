@@ -1,6 +1,29 @@
-# Deco Spacio
+<h1 align="center">
+Deco Spacio
+</h1>
+
+<p align="center">
+  <a href="https://discord.gg/jxZZuj3">
+    <img src="https://img.shields.io/badge/Join%20Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white" alt="Join Discord" />
+  </a>
+  <a href="https://x.com/LuthfanM">
+    <img src="https://img.shields.io/badge/Follow%20on%20X-000000?style=for-the-badge&logo=x&logoColor=white" alt="Follow on X" />
+  </a>
+</p>
 
 AI interior concept generator built with Next.js, TypeScript, Tailwind CSS, Pollinations, and optional Supabase storage.
+
+Core features:
+- Anonymous personal workspace created on first visit.
+- Recovery key for restoring a previous gallery.
+- Interior-specific prompt controls: room type, style, mood, camera angle, and custom prompt.
+- Generated images saved server-side.
+- Gallery persists after page refresh.
+- Saved image can be selected, reused, or used as the base for a variation.
+- Supabase-backed persistence for users, galleries, and generated image files.
+- Visible loading and error states for slow API, invalid/missing input, missing API key, and broken AI responses.
+
+<img width="1754" height="811" alt="image" src="https://github.com/user-attachments/assets/2df4dde4-755c-47eb-b7f0-993344b7cbf8" />
 
 ## Quick Start
 
